@@ -1,1 +1,17 @@
+# Entornos virtuales
+venv/
+.venv/
+env/
 
+# Caché de Python y pytest
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Base de datos local
+instance/
+*.db
+*.sqlite3
+
+# Archivos del sistema
+.DS_Store
