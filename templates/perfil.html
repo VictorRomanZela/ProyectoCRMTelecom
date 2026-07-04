@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Perfil del Cliente</h4>
+                <a href="/clientes" class="btn btn-sm btn-light">Volver al Directorio</a>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-sm-6">
+                        <h5 class="text-muted">Nombre Titular</h5>
+                        <h3>{{ cliente.name }}</h3>
+                        <p class="mb-0"><strong>ID Sistema:</strong> {{ cliente.client_id }}</p>
+                    </div>
+                    <div class="col-sm-6 text-end">
+                        <h5 class="text-muted">Riesgo de Abandono</h5>
+                        {% if cliente.get_churn_risk() > 70 %}
+                            <h2 class="text-danger fw-bold">{{ cliente.get_churn_risk() }}% (ALTO)</h2>
+                        {% elif cliente.get_churn_risk() > 30 %}
+                            <h2 class="text-warning fw-bold">{{ cliente.get_churn_risk() }}% (MEDIO)</h2>
+                        {% else %}
+                            <h2 class="text-success fw-bold">{{ cliente.get_churn_risk() }}% (BAJO)</h2>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+
+                <h5 class="mt-4 mb-3 text-secondary">Detalles del Servicio Contratado</h5>
+                <div class="alert alert-secondary">
+                    <i class="bi bi-hdd-network"></i> {{ cliente.current_plan.get_details() }}
+                </div>
+
+                <h5 class="mt-4 mb-3 text-secondary">Historial de Consumo (Últimos meses)</h5>
+                <ul class="list-group list-group-flush">
+                    {% for gb in cliente.consumption_history.data_usage_history_gb %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Mes {{ loop.index }}
+                            <span class="badge bg-dark rounded-pill">{{ gb }} GB consumidos</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

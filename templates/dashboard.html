@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-secondary border-bottom pb-2">Reportes Gerenciales y Análisis de Datos</h2>
+        <!--<p class="text-muted">Análisis basado en el historial de consumo y umbrales estadísticos de la cartera de clientes.</p>-->
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-dark text-white d-flex justify-content-between">
+                <span>Panel de Analítica de Datos Avanzada</span>
+            </div>
+            <div class="card-body text-center p-0">
+                <img src="{{ url_for('plot_dashboard_avanzado') }}" class="img-fluid w-100 rounded-bottom" alt="Dashboard Avanzado">
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row mt-2">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                Alerta: Clientes con Alto Riesgo de Abandono (> 70%)
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Plan</th>
+                            <th>Caída de Consumo</th>
+                            <th>Acción Recomendada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes_riesgo %}
+                        <tr>
+                            <td>{{ cliente.name }}</td>
+                            <td>{{ cliente.current_plan.name }}</td>
+                            <td>{{ cliente.drop_ratio }}%</td>
+                            <td>
+                                <form action="/clientes/{{ cliente.client_id }}/retencion" method="POST">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-gift"></i> Ofrecer Descuento / Retención
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

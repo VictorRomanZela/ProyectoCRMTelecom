@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Registrar Nuevo Cliente</h5>
+            </div>
+            <div class="card-body">
+                <form action="/clientes/add" method="POST">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre del Cliente</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="plan" class="form-label">Asignar Plan</label>
+                        <select class="form-select" id="plan" name="plan" required>
+                            <option value="postpago_basico">Postpago Básico (10GB)</option>
+                            <option value="postpago_premium">Postpago Premium (Ilimitado)</option>
+                            <option value="prepago_mensual">Prepago Mensual</option>
+                            <option value="fibra_100">Fibra Óptica 100 Mbps</option>
+                            <option value="fibra_500">Fibra Óptica 500 Mbps</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Registrar Cliente</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Directorio de Clientes</h5>
+                <form action="/clientes" method="GET" class="d-flex w-50">
+                    <input type="text" class="form-control me-2" name="buscar" placeholder="Buscar cliente por nombre..." value="{{ busqueda }}">
+                    <button type="submit" class="btn btn-outline-light">Buscar</button>
+                </form>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Plan Actual</th>
+                            <th>Riesgo Churn</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes %}
+                        <tr>
+                            <td>{{ cliente.client_id }}</td>
+                            <td>{{ cliente.name }}</td>
+                            <td>{{ cliente.current_plan.name }}</td>
+                            <td>
+                                {% if cliente.get_churn_risk() > 70 %}
+                                    <span class="badge bg-danger">{{ cliente.get_churn_risk() }}% (Alto)</span>
+                                {% elif cliente.get_churn_risk() > 30 %}
+                                    <span class="badge bg-warning text-dark">{{ cliente.get_churn_risk() }}% (Medio)</span>
+                                {% else %}
+                                    <span class="badge bg-success">{{ cliente.get_churn_risk() }}% (Bajo)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/clientes/{{ cliente.client_id }}" class="btn btn-sm btn-outline-info">Ver Perfil</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">No hay clientes registrados aún.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
