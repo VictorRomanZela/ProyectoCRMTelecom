@@ -14,25 +14,19 @@ from services.api_service import obtener_tipo_cambio_usd_pen
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_crm_telecom'
 
-# ==========================================
-# CONFIGURACIÓN DE LA BASE DE DATOS (Guía 15)
-# ==========================================
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///crm_telecom.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Modelo ORM para la tabla en la base de datos
 class ClienteDB(db.Model):
     id = db.Column(db.String(20), primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     tipo_plan = db.Column(db.String(50), nullable=False)
-    # Guardamos la lista de Python como un texto JSON en la BD
     historial_consumo = db.Column(db.Text, default="[]") 
 
-# Instancia global de la estrategia de churn
 churn_strategy = StatisticalThresholdStrategy()
 
-# Función "Hidratadora": Convierte un registro de la BD a nuestros objetos POO
 def reconstruir_objeto_cliente(cliente_db):
     if cliente_db.tipo_plan == 'postpago_basico':
         plan = PostpaidPlan("Básico", 20.0, 10, 500)
@@ -76,9 +70,6 @@ def filtrar_clientes_en_riesgo(clientes):
             c.drop_ratio = round(caida, 2)
             yield c  # Retorna este cliente y pausa la ejecución hasta que pidan el siguiente
 
-# ==========================================
-# RUTAS DE LA APLICACIÓN WEB
-# ==========================================
 
 @app.route('/')
 def index():
@@ -87,14 +78,11 @@ def index():
 
 @app.route('/clientes', methods=['GET'])
 def gestion_clientes():
-    # Atrapamos lo que el usuario haya escrito en el buscador
     termino_busqueda = request.args.get('buscar', '')
     
     if termino_busqueda:
-        # Filtramos la base de datos (Ej: busca todos los nombres que contengan 'termino')
         clientes_bd = ClienteDB.query.filter(ClienteDB.nombre.ilike(f'%{termino_busqueda}%')).all()
     else:
-        # Si no buscó nada, mostramos todos
         clientes_bd = ClienteDB.query.all()
         
     clientes_oop = [reconstruir_objeto_cliente(c) for c in clientes_bd]
@@ -102,11 +90,8 @@ def gestion_clientes():
 
 @app.route('/clientes/<cliente_id>', methods=['GET'])
 def ver_perfil(cliente_id):
-    # Buscamos al cliente en la base de datos por su ID. 
-    # Si no existe, lanza un error 404 automático.
     cliente_bd = ClienteDB.query.get_or_404(cliente_id)
     
-    # Lo convertimos a nuestro objeto para poder usar sus métodos
     cliente_oop = reconstruir_objeto_cliente(cliente_bd)
     
     return render_template('perfil.html', cliente=cliente_oop)
@@ -116,25 +101,16 @@ def add_cliente():
     nombre = request.form.get('nombre')
     plan_str = request.form.get('plan')
     
-    # Generamos un ID basado en la cantidad de registros en la BD
     total_clientes = ClienteDB.query.count()
     nuevo_id = f"CLI-{total_clientes + 1:03d}"
     
-    # Generamos historial aleatorio para probar
-    # historial_base = random.uniform(5, 50)
-    # historial = [max(0, historial_base + random.uniform(-5, 5)) for _ in range(5)]
     
-    # --- GENERADOR DE HISTORIAL MODIFICADO ---
-    # Haremos que el 30% de los clientes nuevos que registres tengan una caída drástica
     if random.random() > 0.7: 
-        # Generamos una caída de consumo severa (Riesgo Alto)
         historial = [50, 48, 45, 10, 2] 
     else:
-        # Generamos un consumo estable normal (Riesgo Bajo)
         historial_base = random.uniform(5, 50)
         historial = [max(0, historial_base + random.uniform(-5, 5)) for _ in range(5)]
-        
-    # Guardamos en la Base de Datos
+    
     nuevo_cliente = ClienteDB(
         id=nuevo_id, 
         nombre=nombre, 
@@ -196,17 +172,13 @@ def generar_factura():
 
 @app.route('/facturacion/descargar_txt', methods=['POST'])
 def descargar_factura_txt():
-    # 1. Obtenemos los datos desde el formulario oculto en el HTML
     cliente = request.form.get('cliente')
     plan = request.form.get('plan')
     total_usd = request.form.get('total_usd')
     total_pen = request.form.get('total_pen')
     
-    # 2. Creamos un nombre de archivo único para este cliente
     nombre_archivo = f"Factura_{cliente.replace(' ', '_')}.txt"
     
-    # --- IMPLEMENTACIÓN GUÍA 7: Escritura de Archivos ---
-    # Abrimos en modo 'w' (write) para crear el archivo desde cero
     with open(nombre_archivo, "w", encoding="utf-8") as archivo:
         archivo.write("=========================================\n")
         archivo.write("         COMPROBANTE DE PAGO - CRM       \n")
@@ -227,8 +199,7 @@ def dashboard():
     clientes_bd = ClienteDB.query.all()
     clientes_oop = [reconstruir_objeto_cliente(c) for c in clientes_bd]
     
-    # Consumimos el generador convirtiéndolo en lista solo en el último momento
-    # necesario para mandarlo a la plantilla HTML.
+    
     clientes_riesgo = list(filtrar_clientes_en_riesgo(clientes_oop))
 
     return render_template('dashboard.html', clientes_riesgo=clientes_riesgo)
@@ -238,14 +209,10 @@ def aplicar_retencion(cliente_id):
     # Buscamos al cliente en la base de datos
     cliente_bd = ClienteDB.query.get_or_404(cliente_id)
     
-    # Aquí en la vida real usarías una API para enviar un SMS o correo automático.
-    # Por ahora, usamos flash para avisar en la pantalla que el proceso fue exitoso.
     mensaje = f"¡Protocolo de retención activado exitosamente para {cliente_bd.nombre}! Se ha enviado una oferta de 20% de descuento a su correo."
-    
-    # El "success" le dice a Bootstrap que pinte la alerta de color verde
+
     flash(mensaje, "success") 
     
-    # Recargamos la misma página del dashboard
     return redirect(url_for('dashboard'))
 
 @app.route('/plot/dashboard_avanzado')
